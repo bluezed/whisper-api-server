@@ -106,9 +106,17 @@ class WhisperTranscriber:
         """
         logger.info(f"Загрузка модели из {self.model_path}")
 
+        use_flash_attn = False
+        if self.device.type == "cuda":
+            # Проверка GPU на поддержку Flash Attention (требует архитектуру Ampere или новее, т.е >= 8)
+            capability = torch.cuda.get_device_capability(self.device.index)
+            if capability[0] >= 8:
+                use_flash_attn = True
+                logger.info(f"GPU {self.device} поддерживает Flash Attention 2 (compute capability: {capability[0]}.{capability[1]})")
+            else:
+                logger.info(f"GPU {self.device} не поддерживает Flash Attention 2 (compute capability: {capability[0]}.{capability[1]}), делаем fall-back")
         try:
-            # Проверка возможности использования Flash Attention 2
-            if self.device.type == "cuda":
+            if use_flash_attn:
                 self.model = WhisperForConditionalGeneration.from_pretrained(
                     self.model_path,
                     torch_dtype=self.torch_dtype,
@@ -116,7 +124,6 @@ class WhisperTranscriber:
                     use_safetensors=True,
                     attn_implementation="flash_attention_2"
                 ).to(self.device)
-                logger.info("Используется Flash Attention 2")
             else:
                 self.model = WhisperForConditionalGeneration.from_pretrained(
                     self.model_path,
