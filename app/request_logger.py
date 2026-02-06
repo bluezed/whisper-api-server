@@ -1,5 +1,5 @@
 """
-Модуль request_logger.py содержит middleware для логирования входящих запросов и оieтов.
+Module request_logger.py contains middleware for logging incoming requests and responses.
 """
 
 import time
@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 
 class RequestLogger:
     """
-    Middleware для логирования входящих запросов и оieтов.
+    Middleware for logging incoming requests and responses.
     """
     
     def __init__(self, app=None, config: Optional[Dict] = None):
@@ -19,26 +19,26 @@ class RequestLogger:
         self.config = config or {}
         self.logger = logging.getLogger('app.request')
         
-        # Чувствительные заголовки для фильтрации
+        # Sensitive headers for filtering
         self.sensitive_headers = set(self.config.get(
             'sensitive_headers',
             ['authorization', 'cookie', 'set-cookie', 'proxy-authorization', 'x-api-key']
         ))
         
-        # Эндпоинты для исключения из логирования
+        # Endpoints to exclude from logging
         self.exclude_endpoints = set(self.config.get('exclude_endpoints', ['/health', '/static']))
         
         if app is not None:
             self.init_app(app)
     
     def init_app(self, app):
-        """Инициализация middleware с Flask приложением."""
+        """Initialize middleware with Flask application."""
         app.before_request(self._before_request)
         app.after_request(self._after_request)
     
     def _should_log_request(self) -> bool:
-        """Проверка, нужно ли логировать текущий запрос."""
-        # Проверяем, исключен ли эндпоинт
+        """Check if current request should be logged."""
+        # Check if endpoint is excluded
         path = request.path
         for excluded in self.exclude_endpoints:
             if path.startswith(excluded):
@@ -47,19 +47,19 @@ class RequestLogger:
         return True
     
     def _before_request(self):
-        """Логирование входящего запроса."""
+        """Log incoming request."""
         if not self._should_log_request():
             return
         
         g.start_time = time.time()
         
-        # Определяем режим логирования
+        # Determine logging mode
         debug_mode = self.config.get('log_debug', False)
         
-        # Сбор информации о запросе
+        # Collect request information
         request_info = self._extract_request_info(debug=debug_mode)
         
-        # Логирование в зависимости от режима
+        # Log depending on mode
         if debug_mode:
             self._log_debug_request(request_info)
         else:
@@ -70,17 +70,17 @@ class RequestLogger:
             )
     
     def _after_request(self, response):
-        """Логирование оieта."""
+        """Log response."""
         if not self._should_log_request():
             return response
         
-        # Расчет времени обработки
+        # Calculate processing time
         processing_time = time.time() - getattr(g, 'start_time', time.time())
         
-        # Определяем режим логирования
+        # Determine logging mode
         debug_mode = self.config.get('log_debug', False)
         
-        # Логирование в зависимости от режима
+        # Log depending on mode
         if debug_mode:
             self._log_debug_response(response, processing_time)
         else:
@@ -93,8 +93,8 @@ class RequestLogger:
         return response
     
     def _extract_request_info(self, debug: bool = False) -> Dict[str, Any]:
-        """Извлечение информации о запросе."""
-        # Базовая информация
+        """Extract request information."""
+        # Basic information
         info = {
             "endpoint": request.endpoint or str(request.url_rule),
             "method": request.method,
@@ -103,22 +103,22 @@ class RequestLogger:
             "user_agent": request.headers.get('User-Agent', 'Unknown')
         }
         
-        # Параметры запроса
+        # Request parameters
         if request.args:
             info["query_params"] = dict(request.args)
         
-        # Данные формы (исключая файлы)
+        # Form data (excluding files)
         if request.form:
             info["form_data"] = dict(request.form)
         
-        # JSON данные
+        # JSON data
         if request.is_json:
             try:
                 info["json_data"] = request.get_json()
             except Exception:
                 info["json_data"] = "Invalid JSON"
         
-        # Информация о файлах
+        # File information
         if request.files:
             file_info = {}
             for key, file in request.files.items():
@@ -127,15 +127,15 @@ class RequestLogger:
                     "content_type": file.content_type,
                     "content_length": len(file.read()) if file else 0
                 }
-                file.seek(0)  # Возвращаем указатель файла
+                file.seek(0)  # Reset file pointer
             info["files"] = file_info
         
-        # Заголовки
+        # Headers
         if debug:
-            # В отладочном режиме логируем все заголовки
+            # In debug mode, log all headers
             headers = dict(request.headers)
         else:
-            # В обычном режиме фильтруем чувствительные заголовки
+            # In normal mode, filter sensitive headers
             headers = {}
             for key, value in request.headers:
                 if key.lower() not in self.sensitive_headers:
@@ -145,7 +145,7 @@ class RequestLogger:
         return info
     
     def _log_debug_request(self, request_info: Dict[str, Any]):
-        """Логирование полных данных запроса в отладочном режиме."""
+        """Log full request data in debug mode."""
         debug_data = {
             "timestamp": time.time(),
             "type": "request",
@@ -157,7 +157,7 @@ class RequestLogger:
         )
     
     def _log_debug_response(self, response, processing_time: float):
-        """Логирование полных данных оieта в отладочном режиме."""
+        """Log full response data in debug mode."""
         response_info = {
             "status_code": response.status_code,
             "headers": dict(response.headers),
@@ -175,50 +175,50 @@ class RequestLogger:
         )
     
     def _format_request_message(self, request_info: Dict[str, Any]) -> str:
-        """Форматирование сообщения с деталями запроса."""
-        # Базовая информация
+        """Format message with request details."""
+        # Basic information
         method = request_info.get("method", "UNKNOWN")
         path = request_info.get("path", "/")
         client_ip = request_info.get("client_ip", "unknown")
         user_agent = request_info.get("user_agent", "Unknown")
         
-        # Информация о файлах
+        # File information
         file_info = ""
         if "files" in request_info and request_info["files"]:
             file_details = []
             for file_key, file_data in request_info["files"].items():
                 filename = file_data.get("filename", "unknown")
                 size = file_data.get("content_length", 0)
-                file_details.append(f"{filename} ({size} байт)")
-            file_info = f" файлы: {', '.join(file_details)}"
+                file_details.append(f"{filename} ({size} bytes)")
+            file_info = f" files: {', '.join(file_details)}"
         
-        # Информация о параметрах (только имена для безопасности)
+        # Parameter information (only names for security)
         param_info = ""
         if "query_params" in request_info and request_info["query_params"]:
             param_names = list(request_info["query_params"].keys())
-            param_info = f" параметры: {', '.join(param_names)}"
+            param_info = f" params: {', '.join(param_names)}"
         elif "form_data" in request_info and request_info["form_data"]:
             param_names = list(request_info["form_data"].keys())
-            param_info = f" параметры: {', '.join(param_names)}"
+            param_info = f" params: {', '.join(param_names)}"
         elif "json_data" in request_info and isinstance(request_info["json_data"], dict):
             param_names = list(request_info["json_data"].keys())
-            param_info = f" параметры: {', '.join(param_names)}"
+            param_info = f" params: {', '.join(param_names)}"
         
-        # Формирование полного сообщения
-        message = f"{method} {path} от {client_ip} ({user_agent}){file_info}{param_info}"
+        # Format full message
+        message = f"{method} {path} from {client_ip} ({user_agent}){file_info}{param_info}"
         
         return message.strip()
     
     def _format_response_message(self, response, processing_time: float) -> str:
-        """Форматирование сообщения с деталями оieта."""
+        """Format message with response details."""
         status_code = response.status_code
         content_length = response.content_length or 0
         processing_time_rounded = round(processing_time, 3)
         
-        return f"{status_code} за {processing_time_rounded} сек, {content_length} байт"
+        return f"{status_code} in {processing_time_rounded} sec, {content_length} bytes"
     
     def _get_client_ip(self) -> str:
-        """Получение реального IP адреса клиента."""
+        """Get real client IP address."""
         if request.headers.get('X-Forwarded-For'):
             return request.headers.get('X-Forwarded-For').split(',')[0]
         elif request.headers.get('X-Real-IP'):

@@ -1,6 +1,6 @@
 {
     "service_port": 5042,
-    "model_path": "/home/tgepp/whisper-models/whisper-base",
+    "model_path": "/home/user/whisper-models/whisper-base",
     "language": "en",
     "enable_history": true,
     "chunk_length_s": 28,

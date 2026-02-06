@@ -1,6 +1,6 @@
 """
-Модуль routes.py содержит классы для регистрации маршрутов API
-для сервиса распознавания речи.
+Module routes.py contains classes for registering API routes
+for speech recognition service.
 """
 
 import os
@@ -22,45 +22,45 @@ from .utils import logger, log_invalid_file_request
 
 class Routes:
     """
-    Класс для регистрации всех эндпоинтов API.
+    Class for registering all API endpoints.
     
     Attributes:
-        app (Flask): Flask-приложение.
-        config (Dict): Словарь с конфигурацией.
-        transcription_service (TranscriptionService): Сервис транскрибации.
-        file_validator (FileValidator): Валидатор файлов.
+        app (Flask): Flask application.
+        config (Dict): Dictionary with configuration.
+        transcription_service (TranscriptionService): Transcription service.
+        file_validator (FileValidator): File validator.
     """
 
     def __init__(self, app, transcriber, config: Dict, file_validator):
         """
-        Инициализация маршрутов.
+        Initialize routes.
 
         Args:
-            app: Flask-приложение.
-            transcriber: Экземпляр транскрайбера.
-            config: Словарь с конфигурацией.
-            file_validator: Валидатор файлов.
+            app: Flask application.
+            transcriber: Transcriber instance.
+            config: Dictionary with configuration.
+            file_validator: File validator.
         """
         self.app = app
         self.config = config
         self.transcription_service = TranscriptionService(transcriber, config)
         self.file_validator = file_validator
 
-        # Регистрация маршрутов
+        # Register routes
         self._register_routes()
 
     def _register_routes(self) -> None:
         """
-        Регистрация всех эндпоинтов.
+        Register all endpoints.
         """
         @self.app.route('/', methods=['GET'])
         def index():
-            """Корень. Отдаёт HTML клиент."""
+            """Root. Returns HTML client."""
             return self.app.send_static_file('index.html')
 
         @self.app.route('/health', methods=['GET'])
         def health_check():
-            """Эндпоинт для проверки статуса сервиса."""
+            """Endpoint for service status check."""
             return jsonify({
                 "status": "ok",
                 "version": self.config.get("version", "1.0.0")
@@ -68,12 +68,12 @@ class Routes:
 
         @self.app.route('/config', methods=['GET'])
         def get_config():
-            """Эндпоинт для получения конфигурации сервиса."""
+            """Endpoint for getting service configuration."""
             return jsonify(self.config), 200
 
         @self.app.route('/local/transcriptions', methods=['POST'])
         def local_transcribe():
-            """Эндпоинт для локальной транскрибации файла по пути на сервере."""
+            """Endpoint for local transcription of file by path on server."""
             data = request.json
 
             if not data or "file_path" not in data:
@@ -81,17 +81,17 @@ class Routes:
 
             file_path = data["file_path"]
             
-            # Валидация пути к файлу
+            # Validate file path
             try:
                 validated_path = self.file_validator.validate_local_file_path(
                     file_path, 
                     allowed_directories=self.config.get("allowed_directories", [])
                 )
             except ValidationError as e:
-                # Логирование обращения к API с невалидным путем к файлу
+                # Log API access with invalid file path
                 client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
-                logger.warning(f"Endpoint accessed /local/transcriptions с невалидным путем к файлу '{file_path}' "
-                              f"from client {client_ip}. Ошибка: {str(e)}")
+                logger.warning(f"Endpoint accessed /local/transcriptions with invalid file path '{file_path}' "
+                              f"from client {client_ip}. Error: {str(e)}")
                 return jsonify({"error": str(e)}), 400
             
             source = LocalFileSource(validated_path, self.config.get("file_validation", {}).get("max_file_size_mb", 100))
@@ -100,7 +100,7 @@ class Routes:
 
         @self.app.route('/v1/models', methods=['GET'])
         def list_models():
-            """Эндпоинт для получения списка доступных моделей."""
+            """Endpoint for getting list of available models."""
             return jsonify({
                 "data": [
                     {
@@ -115,7 +115,7 @@ class Routes:
 
         @self.app.route('/v1/models/<model_id>', methods=['GET'])
         def retrieve_model(model_id):
-            """Эндпоинт для получения информации о конкретной модели."""
+            """Endpoint for getting information about specific model."""
             if model_id == os.path.basename(self.config["model_path"]):
                 return jsonify({
                     "id": model_id,
@@ -130,7 +130,7 @@ class Routes:
                 }), 404
 
         def _handle_transcription_request():
-            """Общая функция для обработки запросов транскрибации."""
+            """Common function for handling transcription requests."""
             source = UploadedFileSource(request.files, self.config.get("file_validation", {}).get("max_file_size_mb", 100))
             response, status_code = self.transcription_service.transcribe_from_source(source, request.form, self.file_validator)
             return jsonify(response), status_code
@@ -138,13 +138,13 @@ class Routes:
         @self.app.route('/v1/audio/transcriptions', methods=['POST'])
         @log_invalid_file_request
         def openai_transcribe_endpoint():
-            """Эндпоинт для транскрибации аудиофайла (multipart-форма)."""
+            """Endpoint for audio transcription (multipart form)."""
             return _handle_transcription_request()
 
         @self.app.route('/v1/audio/transcriptions/url', methods=['POST'])
         @log_invalid_file_request
         def transcribe_from_url():
-            """Эндпоинт для транскрибации аудиофайла по URL."""
+            """Endpoint for transcription of audio file by URL."""
             data = request.json
 
             if not data or "url" not in data:
@@ -154,7 +154,7 @@ class Routes:
                 }), 400
 
             url = data["url"]
-            # Извлекаем параметры транскрибации, если они есть
+            # Extract transcription parameters if present
             params = {k: v for k, v in data.items() if k != "url"}
 
             source = URLSource(url, self.config.get("file_validation", {}).get("max_file_size_mb", 100))
@@ -164,7 +164,7 @@ class Routes:
         @self.app.route('/v1/audio/transcriptions/base64', methods=['POST'])
         @log_invalid_file_request
         def transcribe_from_base64():
-            """Эндпоинт для транскрибации аудио, закодированного в base64."""
+            """Endpoint for transcription of base64-encoded audio."""
             data = request.json
 
             if not data or "file" not in data:
@@ -174,7 +174,7 @@ class Routes:
                 }), 400
 
             base64_data = data["file"]
-            # Извлекаем параметры транскрибации, если они есть
+            # Extract transcription parameters if present
             params = {k: v for k, v in data.items() if k != "file"}
 
             source = Base64Source(base64_data, self.config.get("file_validation", {}).get("max_file_size_mb", 100))
@@ -184,16 +184,16 @@ class Routes:
         @self.app.route('/v1/audio/transcriptions/multipart', methods=['POST'])
         @log_invalid_file_request
         def transcribe_multipart():
-            """Эндпоинт для транскрибации аудиофайла, загруженного через форму."""
+            """Endpoint for transcription of audio file uploaded via form."""
             return _handle_transcription_request()
         
         @self.app.route('/v1/audio/transcriptions/async', methods=['POST'])
         @log_invalid_file_request
         def transcribe_async():
-            """Эндпоинт для асинхронной транскрибации аудиофайла."""
+            """Endpoint for asynchronous audio file transcription."""
             source = UploadedFileSource(request.files, self.config.get("file_validation", {}).get("max_file_size_mb", 100))
             
-            # Получаем файл
+            # Get file
             file, filename, error = source.get_audio_file()
             
             if error:
@@ -202,25 +202,25 @@ class Routes:
             if not file:
                 return jsonify({"error": "Failed to get audio file"}), 400
             
-            # Валидация файла
+            # Validate file
             try:
                 self.file_validator.validate_file(file, filename)
             except ValidationError as e:
                 return jsonify({"error": str(e)}), 400
             
-            # Сохраняем файл во временный файл
+            # Save file to temporary file
             from .file_manager import temp_file_manager
             with temp_file_manager.temp_file() as temp_path:
                 file.save(temp_path)
                 
-                # Запускаем асинхронную транскрибацию
+                # Start async transcription
                 task_id = transcribe_audio_async(temp_path, self.transcription_service.transcriber)
                 
                 return jsonify({"task_id": task_id}), 202
         
         @self.app.route('/v1/tasks/<task_id>', methods=['GET'])
         def get_task_status(task_id):
-            """Эндпоинт для получения статуса асинхронной задачи."""
+            """Endpoint for getting async task status."""
             task_info = task_manager.get_task_status(task_id)
             
             if not task_info:

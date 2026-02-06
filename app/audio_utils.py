@@ -1,5 +1,5 @@
 """
-Модуль audio_utils.py содержит утилитарные функции для работы с аудио.
+Module audio_utils.py contains utility functions for working with audio.
 """
 
 import os
@@ -13,40 +13,40 @@ logger = logging.getLogger('app.audio_utils')
 
 
 class AudioUtils:
-    """Утилитарный класс для работы с аудио."""
+    """Utility class for working with audio."""
     
     @staticmethod
     def load_audio(file_path: str, sr: int = 16000) -> Tuple[np.ndarray, int]:
         """
-        Loading audio file using встроенной библиотеки wave.
+        Loading audio file using built-in wave library.
 
         Args:
-            file_path: Путь к аудиофайлу.
-            sr: Целевая частота дискретизации.
+            file_path: Path to audio file.
+            sr: Target sampling rate.
 
         Returns:
-            Кортеж (массив numpy, частота дискретизации).
+            Tuple (numpy array, sampling rate).
             
         Raises:
-            Exception: Если не удалось загрузить аудиофайл.
+            Exception: If failed to load audio file.
         """
         try:
-            # Открываем WAV файл
+            # Open WAV file
             with wave.open(file_path, 'rb') as wav_file:
-                # Проверяем, что это моно-аудио
+                # Check if it's mono audio
                 if wav_file.getnchannels() != 1:
-                    logger.warning(f"Файл {file_path} не моно-аудио, конвертируем в моно")
+                    logger.warning(f"File {file_path} is not mono, converting to mono")
                 
-                # Чиieм аудиоданные
+                # Read audio data
                 frames = wav_file.readframes(-1)
-                # Конвертируем 16-битные целые числа в float32 в диапазоне [-1.0, 1.0]
-                # 32768.0 - это 2^15, максимальное значение для 16-битного знакового целого
+                # Convert 16-bit integers to float32 in range [-1.0, 1.0]
+                # 32768.0 is 2^15, max value for 16-bit signed integer
                 audio_array = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
                 
-                # Получаем частоту дискретизации
+                # Get sampling rate
                 sampling_rate = wav_file.getframerate()
                 
-                # Если частота дискретизации не совпадает с целевой, выполняем ресемплинг
+                # If sampling rate doesn't match target, resample
                 if sampling_rate != sr:
                     from scipy.signal import resample
                     num_samples = int(len(audio_array) * sr / sampling_rate)
@@ -56,25 +56,25 @@ class AudioUtils:
                 return audio_array, sampling_rate
                 
         except Exception as e:
-            logger.error(f"Ошибка при загрузке аудио {file_path}: {e}")
+            logger.error(f"Error loading audio {file_path}: {e}")
             raise
     
     @staticmethod
     def get_audio_duration(file_path: str) -> float:
         """
-        Определяет длительность аудиофайла с использованием ffprobe.
+        Determines audio file duration using ffprobe.
         
         Args:
-            file_path: Путь к аудиофайлу.
+            file_path: Path to audio file.
             
         Returns:
-            Длительность в секундах.
+            Duration in seconds.
         """
         try:
-            # Проверяем, что файл существует
+            # Check if file exists
             if not os.path.exists(file_path):
-                logger.error(f"Файл не существует: {file_path}")
-                raise Exception(f"Файл не существует: {file_path}")
+                logger.error(f"File does not exist: {file_path}")
+                raise Exception(f"File does not exist: {file_path}")
                 
             cmd = [
                 "ffprobe",
@@ -89,21 +89,21 @@ class AudioUtils:
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=10  # Ограничение по времени выполнения
+                timeout=10  # Execution timeout limit
             )
             
             duration = float(result.stdout.strip())
             return duration
             
         except subprocess.TimeoutExpired:
-            logger.error(f"Таймаут при определении длительности файла {file_path}")
-            raise Exception(f"Таймаут при определении длительности файла {file_path}")
+            logger.error(f"Timeout determining file duration {file_path}")
+            raise Exception(f"Timeout determining file duration {file_path}")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Ошибка при выполнении ffprobe для файла {file_path}: {e.stderr}")
-            raise Exception(f"Ошибка при выполнении ffprobe для файла {file_path}: {e.stderr}")
+            logger.error(f"Error running ffprobe for file {file_path}: {e.stderr}")
+            raise Exception(f"Error running ffprobe for file {file_path}: {e.stderr}")
         except (ValueError, TypeError) as e:
-            logger.error(f"Ошибка при преобразовании длительности для файла {file_path}: {e}")
-            raise Exception(f"Ошибка при преобразовании длительности для файла {file_path}: {e}")
+            logger.error(f"Error converting duration for file {file_path}: {e}")
+            raise Exception(f"Error converting duration for file {file_path}: {e}")
         except Exception as e:
-            logger.error(f"Неожиданная ошибка при определении длительности файла {file_path}: {e}")
-            raise Exception(f"Неожиданная ошибка при определении длительности файла {file_path}: {e}")
+            logger.error(f"Unexpected error determining file duration {file_path}: {e}")
+            raise Exception(f"Unexpected error determining file duration {file_path}: {e}")

@@ -1,5 +1,5 @@
 """
-Модуль cache.py содержит функции для кэширования данных.
+Module cache.py contains functions for caching data.
 """
 
 import time
@@ -10,115 +10,115 @@ from .utils import logger
 
 class SimpleCache:
     """
-    Простой кэш на основе словаря с поддержкой TTL (Time To Live).
+    Simple dictionary-based cache with TTL (Time To Live) support.
     
     Attributes:
-        cache (Dict): Словарь для хранения кэшированных данных.
-        ttl (int): Время жизни кэша в секундах.
+        cache (Dict): Dictionary for storing cached data.
+        ttl (int): Cache time to live in seconds.
     """
     
     def __init__(self, ttl: int = 300):
         """
-        Инициализация кэша.
+        Initialize cache.
         
         Args:
-            ttl: Время жизни кэша в секундах (по умолчанию 5 минут).
+            ttl: Cache time to live in seconds (default 5 minutes).
         """
         self.cache: Dict[str, Dict[str, Any]] = {}
         self.ttl = ttl
     
     def get(self, key: str) -> Optional[Any]:
         """
-        Получение значения из кэша.
+        Get value from cache.
         
         Args:
-            key: Ключ для получения значения.
+            key: Key to get value.
             
         Returns:
-            Кэшированное значение или None, если ключ не найден или срок действия истек.
+            Cached value or None if key not found or expired.
         """
         if key in self.cache:
             item = self.cache[key]
             if time.time() - item["timestamp"] < self.ttl:
-                logger.debug(f"Кэш hit для ключа: {key}")
+                logger.debug(f"Cache hit for key: {key}")
                 return item["value"]
             else:
-                # Удаление просроченного элемента
+                # Remove expired item
                 del self.cache[key]
-                logger.debug(f"Кэш expired для ключа: {key}")
+                logger.debug(f"Cache expired for key: {key}")
         
-        logger.debug(f"Кэш miss для ключа: {key}")
+        logger.debug(f"Cache miss for key: {key}")
         return None
     
     def set(self, key: str, value: Any) -> None:
         """
-        Установка значения в кэш.
+        Set value in cache.
         
         Args:
-            key: Ключ для хранения значения.
-            value: Значение для кэширования.
+            key: Key to store value.
+            value: Value to cache.
         """
         self.cache[key] = {
             "value": value,
             "timestamp": time.time()
         }
-        logger.debug(f"Значение кэшировано для ключа: {key}")
+        logger.debug(f"Value cached for key: {key}")
     
     def clear(self) -> None:
         """
-        Очистка кэша.
+        Clear cache.
         """
         self.cache.clear()
-        logger.debug("Кэш очищен")
+        logger.debug("Cache cleared")
     
     def delete(self, key: str) -> bool:
         """
-        Удаление значения из кэша.
+        Delete value from cache.
         
         Args:
-            key: Ключ для удаления.
+            key: Key to delete.
             
         Returns:
-            True, если ключ был удален, иначе False.
+            True if key was deleted, otherwise False.
         """
         if key in self.cache:
             del self.cache[key]
-            logger.debug(f"Значение удалено из кэша для ключа: {key}")
+            logger.debug(f"Value deleted from cache for key: {key}")
             return True
         return False
 
 
-# Глобальные экземпляры кэша
-model_cache = SimpleCache(ttl=3600)  # Кэш для метаданных модели (1 час)
-config_cache = SimpleCache(ttl=300)   # Кэш для конфигурации (5 минут)
+# Global cache instances
+model_cache = SimpleCache(ttl=3600)  # Cache for model metadata (1 hour)
+config_cache = SimpleCache(ttl=300)   # Cache for configuration (5 minutes)
 
 
 def cache_result(cache_instance: SimpleCache, key_prefix: str = ""):
     """
-    Декоратор для кэширования результатов функции.
+    Decorator for caching function results.
     
     Args:
-        cache_instance: Экземпляр кэша.
-        key_prefix: Префикс для ключа кэша.
+        cache_instance: Cache instance.
+        key_prefix: Prefix for cache key.
         
     Returns:
-        Декорированная функция.
+        Decorated function.
     """
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Генерация ключа кэша на основе имени функции и аргументов
+            # Generate cache key based on function name and arguments
             cache_key = f"{key_prefix}{func.__name__}_{str(args)}_{str(kwargs)}"
             
-            # Попытка получить результат из кэша
+            # Try to get result from cache
             cached_result = cache_instance.get(cache_key)
             if cached_result is not None:
                 return cached_result
             
-            # Если результат не в кэше, вызываем функцию
+            # If result not in cache, call function
             result = func(*args, **kwargs)
             
-            # Сохраняем результат в кэш
+            # Save result to cache
             cache_instance.set(cache_key, result)
             
             return result

@@ -1,6 +1,6 @@
 """
-Модуль file_manager.py содержит классы для централизованного управления временными файлами.
-Предоставляет унифицированный интерфейс для создания, отслеживания и очистки временных файлов.
+Module file_manager.py contains classes for centralized temporary file management.
+Provides unified interface for creating, tracking, and cleaning up temporary files.
 """
 
 import os
@@ -13,28 +13,28 @@ from .utils import logger
 
 class TempFileManager:
     """
-    Класс для централизованного управления временными файлами.
+    Class for centralized temporary file management.
     
-    Предоставляет методы для создания временных файлов и их последующей очистки.
-    Использует контекстные менеджеры для автоматической очистки ресурсов.
+    Provides methods for creating temporary files and their subsequent cleanup.
+    Uses context managers for automatic resource cleanup.
     """
     
     def __init__(self):
         """
-        Инициализация менеджера временных файлов.
+        Initialize temporary file manager.
         """
         self.temp_files = []
         self.temp_dirs = []
     
     def create_temp_file(self, suffix: str = ".wav") -> Tuple[str, str]:
         """
-        Создает временный файл с уникальным именем.
+        Creates temporary file with unique name.
         
         Args:
-            suffix: Расширение временного файла.
+            suffix: Temporary file extension.
             
         Returns:
-            Кортеж (путь к файлу, путь к временной директории).
+            Tuple (file path, temp directory path).
         """
         temp_dir = tempfile.mkdtemp()
         temp_file = os.path.join(temp_dir, f"{uuid.uuid4()}{suffix}")
@@ -42,15 +42,15 @@ class TempFileManager:
         self.temp_files.append(temp_file)
         self.temp_dirs.append(temp_dir)
         
-        logger.debug(f"Создан временный файл: {temp_file}")
+        logger.debug(f"Created temporary file: {temp_file}")
         return temp_file, temp_dir
     
     def cleanup_temp_files(self, file_paths: Optional[List[str]] = None) -> None:
         """
-        Очищает временные файлы и директории.
+        Cleans up temporary files and directories.
         
         Args:
-            file_paths: Список путей к файлам для очистки. Если None, очищает все отслеживаемые файлы.
+            file_paths: List of file paths to clean up. If None, cleans up all tracked files.
         """
         paths_to_clean = file_paths if file_paths is not None else self.temp_files
         
@@ -58,21 +58,21 @@ class TempFileManager:
             try:
                 if os.path.exists(path):
                     os.remove(path)
-                    logger.debug(f"Удален временный файл: {path}")
+                    logger.debug(f"Removed temporary file: {path}")
                     
-                    # Попытка удалить директорию, если она пуста
+                    # Attempt to remove directory if it's empty
                     temp_dir = os.path.dirname(path)
                     if os.path.exists(temp_dir) and not os.listdir(temp_dir):
                         os.rmdir(temp_dir)
-                        logger.debug(f"Удалена временная директория: {temp_dir}")
+                        logger.debug(f"Removed temporary directory: {temp_dir}")
                         
-                        # Удаление из списка отслеживаемых директорий
+                        # Remove from tracked directories list
                         if temp_dir in self.temp_dirs:
                             self.temp_dirs.remove(temp_dir)
             except Exception as e:
-                logger.warning(f"Не удалось очистить временный файл {path}: {e}")
+                logger.warning(f"Could not clean up temporary file {path}: {e}")
         
-        # Удаление файлов из списка отслеживаемых
+        # Remove files from tracked list
         if file_paths is None:
             self.temp_files.clear()
         else:
@@ -83,13 +83,13 @@ class TempFileManager:
     @contextlib.contextmanager
     def temp_file(self, suffix: str = ".wav") -> Generator[str, None, None]:
         """
-        Контекстный менеджер для создания и автоматической очистки временного файла.
+        Context manager for creating and automatically cleaning up temporary file.
         
         Args:
-            suffix: Расширение временного файла.
+            suffix: Temporary file extension.
             
         Yields:
-            Путь к временному файлу.
+            Path to temporary file.
         """
         temp_file, _ = self.create_temp_file(suffix)
         try:
@@ -99,18 +99,18 @@ class TempFileManager:
     
     def cleanup_all(self) -> None:
         """
-        Очищает все отслеживаемые временные файлы и директории.
+        Cleans up all tracked temporary files and directories.
         """
         self.cleanup_temp_files()
         for temp_dir in self.temp_dirs:
             try:
                 if os.path.exists(temp_dir) and not os.listdir(temp_dir):
                     os.rmdir(temp_dir)
-                    logger.debug(f"Удалена временная директория: {temp_dir}")
+                    logger.debug(f"Removed temporary directory: {temp_dir}")
             except Exception as e:
-                logger.warning(f"Не удалось очистить временную директорию {temp_dir}: {e}")
+                logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
         self.temp_dirs.clear()
 
 
-# Глобальный экземпляр менеджера временных файлов
+# Global instance of temporary file manager
 temp_file_manager = TempFileManager()

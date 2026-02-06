@@ -1,9 +1,9 @@
 """
-Модуль transcriber.py содержит класс WhisperTranscriber, который использует модель Whisper от 
-OpenAI для транскрибации аудиофайлов в текст. Класс включает в себя методы для загрузки модели, 
-обработки аудио (с использованием класса AudioProcessor), и выполнения транскрибации. 
-Обрабатывает выбор устройства (CPU, CUDA, MPS) для выполнения вычислений и обеспечивает 
-возможность использования Flash Attention 2 для ускорения работы модели на поддерживаемых GPU.
+Module transcriber.py contains WhisperTranscriber class, which uses OpenAI's Whisper model 
+for transcribing audio files to text. The class includes methods for loading the model, 
+processing audio (using AudioProcessor class), and performing transcription. It handles 
+device selection (CPU, CUDA, MPS) for computations and provides the ability to use 
+Flash Attention 2 to speed up the model on supported GPUs.
 """
 
 import time
@@ -26,31 +26,31 @@ from .utils import logger
 
 class WhisperTranscriber:
     """
-    Класс для распознавания речи с помощью модели Whisper.
+    Class for speech recognition using Whisper model.
     
     Attributes:
-        config (Dict): Словарь с параметрами конфигурации.
-        model_path (str): Model path Whisper.
-        language (str): Язык распознавания.
-        chunk_length_s (int): Длина аудиочанка в секундах.
-        batch_size (int): Размер пакета для обработки.
-        max_new_tokens (int): Максимальное количество новых токенов для генерации.
-        return_timestamps (bool): Флаг возврата временных меток.
-        temperature (float): Параметр температуры для генерации.
-        torch_dtype (torch.dtype): Оптимальный тип данных для тензоров.
-        audio_processor (AudioProcessor): Объект для обработки аудио.
+        config (Dict): Dictionary with configuration parameters.
+        model_path (str): Model path for Whisper.
+        language (str): Recognition language.
+        chunk_length_s (int): Audio chunk length in seconds.
+        batch_size (int): Batch size for processing.
+        max_new_tokens (int): Maximum number of new tokens for generation.
+        return_timestamps (bool): Flag for returning timestamps.
+        temperature (float): Temperature parameter for generation.
+        torch_dtype (torch.dtype): Optimal data type for tensors.
+        audio_processor (AudioProcessor): Object for audio processing.
         device (torch.device): Device for computations.
-        model (WhisperForConditionalGeneration): Loaded model Whisper.
-        processor (WhisperProcessor): Процессор для модели Whisper.
-        asr_pipeline (pipeline): Пайплайн для автоматического распознавания речи.
+        model (WhisperForConditionalGeneration): Loaded Whisper model.
+        processor (WhisperProcessor): Processor for Whisper model.
+        asr_pipeline (pipeline): Pipeline for automatic speech recognition.
     """
     
     def __init__(self, config: Dict):
         """
-        Инициализация транскрайбера.
+        Initialize transcriber.
 
         Args:
-            config: Словарь с параметрами конфигурации.
+            config: Dictionary with configuration parameters.
         """
         self.config = config
         self.model_path = config["model_path"]
@@ -61,27 +61,27 @@ class WhisperTranscriber:
         self.return_timestamps = config["return_timestamps"]
         self.temperature = config["temperature"]
 
-        # Оптимальный тип для тензоров
+        # Optimal type for tensors
         self.torch_dtype = torch.bfloat16
 
-        # Создаем объект для обработки аудио
+        # Create object for audio processing
         self.audio_processor = AudioProcessor(config)
 
-        # Определяем устройство для вычислений
+        # Determine device for computations
         self.device = self._get_device()
 
-        # Загружаем модель при инициализации
+        # Load model during initialization
         self._load_model()
 
     def _get_device(self) -> torch.device:
         """
-        Определение доступного устройства для вычислений.
+        Determine available device for computations.
         
         Returns:
-            Объект устройства PyTorch.
+            PyTorch device object.
         """
         if torch.cuda.is_available():
-            # Проверяем, доступна ли GPU с индексом 1
+            # Check if GPU with index 1 is available
             if torch.cuda.device_count() > 1:
                 logger.info("Using CUDA GPU index 1 for computations")
                 return torch.device("cuda:1")
@@ -99,7 +99,7 @@ class WhisperTranscriber:
 
     def _load_model(self) -> None:
         """
-        Loading model and processor.
+        Load model and processor.
         
         Raises:
             Exception: If model failed to load.
@@ -108,7 +108,7 @@ class WhisperTranscriber:
 
         use_flash_attn = False
         if self.device.type == "cuda":
-            # Checking GPU for Flash Attention support (requires Ampere architecture or newer, ie >= 8)
+            # Check GPU for Flash Attention support (requires Ampere architecture or newer, ie >= 8)
             capability = torch.cuda.get_device_capability(self.device.index)
             if capability[0] >= 8:
                 use_flash_attn = True
@@ -132,8 +132,8 @@ class WhisperTranscriber:
                     use_safetensors=True
                 ).to(self.device)
         except Exception as e:
-            logger.warning(f"Не удалось загрузить модель с Flash Attention: {e}")
-            # Fallback к обычной версии
+            logger.warning(f"Could not load model with Flash Attention: {e}")
+            # Fallback to regular version
             self.model = WhisperForConditionalGeneration.from_pretrained(
                 self.model_path,
                 torch_dtype=self.torch_dtype,
@@ -161,15 +161,15 @@ class WhisperTranscriber:
 
     def transcribe(self, audio_path: str) -> Union[str, Dict]:
         """
-        Транскрибация аудиофайла.
+        Transcribe audio file.
         
         Args:
-            audio_path: Путь к обработанному аудиофайлу.
+            audio_path: Path to processed audio file.
 
         Returns:
-            В зависимости от параметра return_timestamps:
-            - Если return_timestamps=False: строка с распознанным текстом
-            - Если return_timestamps=True: словарь с ключами "segments" (список словарей с ключами start_time_ms, end_time_ms, text) и "text" (полный текст)
+            Depending on return_timestamps parameter:
+            - If return_timestamps=False: string with recognized text
+            - If return_timestamps=True: dictionary with "segments" (list of dictionaries with start_time_ms, end_time_ms, text keys) and "text" (full text)
         """
         logger.info(f"Starting transcription of file: {audio_path}")
         
@@ -177,7 +177,7 @@ class WhisperTranscriber:
             # Loading audio as numpy array
             audio_array, sampling_rate = AudioUtils.load_audio(audio_path, sr=16000)
             
-            # Транскрибация с корректным форматом данных
+            # Transcription with correct data format
             result = self.asr_pipeline(
                 {"raw": audio_array, "sampling_rate": sampling_rate}, 
                 generate_kwargs={
@@ -188,18 +188,18 @@ class WhisperTranscriber:
                 return_timestamps=self.return_timestamps
             )
             
-            # Если временные метки не запрошены, возвращаем только текст
+            # If timestamps not requested, return only text
             if not self.return_timestamps:
                 transcribed_text = result.get("text", "")
-                logger.info(f"Транскрибация завершена: получено {len(transcribed_text)} символов текста")
+                logger.info(f"Transcription completed: received {len(transcribed_text)} characters of text")
                 return transcribed_text
             
-            # Если временные метки запрошены, обрабатываем и форматируем результат
+            # If timestamps requested, process and format result
             segments = []
             full_text = result.get("text", "")
             
             if "chunks" in result:
-                # Для новых версий модели Whisper
+                # For newer Whisper model versions
                 for chunk in result["chunks"]:
                     start_time = chunk.get("timestamp", [0, 0])[0]
                     end_time = chunk.get("timestamp", [0, 0])[1]
@@ -211,7 +211,7 @@ class WhisperTranscriber:
                         "text": text
                     })
             elif hasattr(result, "get") and "segments" in result:
-                # Для старых версий модели Whisper
+                # For older Whisper model versions
                 for segment in result["segments"]:
                     start_time = segment.get("start", 0)
                     end_time = segment.get("end", 0)
@@ -223,11 +223,11 @@ class WhisperTranscriber:
                         "text": text
                     })
             else:
-                logger.warning("Временные метки запрошены, но не найдены в результате транскрибации")
+                logger.warning("Timestamps requested but not found in transcription result")
             
-            logger.info(f"Транскрибация с временными метками завершена: получено {len(segments)} сегментов")
+            logger.info(f"Transcription with timestamps completed: received {len(segments)} segments")
             
-            # Возвращаем словарь с сегментами и полным текстом
+            # Return dictionary with segments and full text
             return {
                 "segments": segments,
                 "text": full_text
@@ -235,46 +235,46 @@ class WhisperTranscriber:
             
         except Exception as e:
             logger.error(f"Error during audio transcription '{audio_path}': {str(e)}")
-            logger.error(f"Тип исключения: {type(e).__name__}")
+            logger.error(f"Exception type: {type(e).__name__}")
             logger.error(f"Traceback: {traceback.format_exc()}")
             raise
 
     def process_file(self, input_path: str) -> Union[str, Dict]:
         """
-        Полный процесс обработки и транскрибации аудиофайла.
+        Complete audio file processing and transcription.
         
         Args:
-            input_path: Путь к исходному аудиофайлу.
+            input_path: Path to source audio file.
             
         Returns:
-            В зависимости от параметра return_timestamps:
-            - Если return_timestamps=False: строка с распознанным текстом
-            - Если return_timestamps=True: словарь с ключами "segments" и "text"
+            Depending on return_timestamps parameter:
+            - If return_timestamps=False: string with recognized text
+            - If return_timestamps=True: dictionary with "segments" and "text" keys
         """
         start_time = time.time()
-        logger.info(f"Начало обработки файла: {input_path}")
+        logger.info(f"Starting file processing: {input_path}")
         
         temp_files = []
         
         try:
-            # Обработка аудио (конвертация, нормализация, добавление тишины)
+            # Audio processing (conversion, normalization, silence addition)
             processed_path, temp_files = self.audio_processor.process_audio(input_path)
             
-            # Транскрибация
+            # Transcription
             result = self.transcribe(processed_path)
             
             elapsed_time = time.time() - start_time
-            logger.info(f"Обработка и транскрибация завершены за {elapsed_time:.2f} секунд")
+            logger.info(f"Processing and transcription completed in {elapsed_time:.2f} seconds")
             
             return result
             
         except Exception as e:
             elapsed_time = time.time() - start_time
-            logger.error(f"Error processing file '{input_path}' in {str(e)}")
-            logger.error(f"Тип исключения: {type(e).__name__}")
+            logger.error(f"Error processing file '{input_path}' in {elapsed_time:.2f} seconds: {str(e)}")
+            logger.error(f"Exception type: {type(e).__name__}")
             logger.error(f"Traceback: {traceback.format_exc()}")
             raise
             
         finally:
-            # Очистка временных файлов
+            # Cleanup temporary files
             temp_file_manager.cleanup_temp_files(temp_files)

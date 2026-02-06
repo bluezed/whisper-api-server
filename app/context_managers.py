@@ -1,5 +1,5 @@
 """
-Модуль context_managers.py содержит контекстные менеджеры для управления ресурсами.
+Module context_managers.py contains context managers for resource management.
 """
 
 import os
@@ -11,21 +11,21 @@ from .utils import logger
 @contextlib.contextmanager
 def open_file(file_path: str, mode: str = 'rb') -> Generator[BinaryIO, None, None]:
     """
-    Контекстный менеджер для безопасного открытия и закрытия файлов.
+    Context manager for safely opening and closing files.
     
     Args:
-        file_path: Путь к файлу.
-        mode: Режим открытия файла.
+        file_path: Path to file.
+        mode: File open mode.
         
     Yields:
-        Файловый объект.
+        File object.
     """
     file_obj = None
     try:
         file_obj = open(file_path, mode)
         yield file_obj
     except Exception as e:
-        logger.error(f"Ошибка при работе с файлом {file_path}: {e}")
+        logger.error(f"Error working with file {file_path}: {e}")
         raise
     finally:
         if file_obj:
@@ -35,13 +35,13 @@ def open_file(file_path: str, mode: str = 'rb') -> Generator[BinaryIO, None, Non
 @contextlib.contextmanager
 def audio_file(file_path: str) -> Generator[BinaryIO, None, None]:
     """
-    Контекстный менеджер для работы с аудиофайлами.
+    Context manager for working with audio files.
     
     Args:
-        file_path: Путь к аудиофайлу.
+        file_path: Path to audio file.
         
     Yields:
-        Файловый объект в бинарном режиме.
+        File object in binary mode.
     """
     with open_file(file_path, 'rb') as f:
         yield f

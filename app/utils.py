@@ -1,36 +1,36 @@
 """
-Модуль utils.py содержит утилиты и вспомогательные функции.
+Module utils.py contains utilities and helper functions.
 """
 
 import logging
 import functools
 from flask import request
 
-# Получаем логгер из централизованной настройки
+# Get logger from centralized configuration
 logger = logging.getLogger('app.utils')
 
 
 def log_invalid_file_request(func):
     """
-    Декоратор для логирования запросов с невалидными файлами.
+    Decorator for logging requests with invalid files.
     
     Args:
-        func: Декорируемая функция.
+        func: Function to decorate.
         
     Returns:
-        Обернутая функция с логированием ошибок валидации файлов.
+        Wrapped function with file validation error logging.
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            # Получение информации о запросе
+            # Get request information
             client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
             endpoint = request.endpoint or 'unknown'
             method = request.method or 'unknown'
             
-            # Получение имени файла из запроса
+            # Get filename from request
             filename = 'unknown'
             if 'file' in request.files:
                 filename = request.files['file'].filename
@@ -39,10 +39,10 @@ def log_invalid_file_request(func):
                 if data and 'file' in data:
                     filename = data.get('filename', 'base64_data')
             
-            # Логирование обращения к API with invalid file
+            # Log API access with invalid file
             logger.warning(f"Endpoint accessed {method} {endpoint} with invalid file '{filename}' "
-                          f"from client {client_ip}. Ошибка: {str(e)}")
+                          f"from client {client_ip}. Error: {str(e)}")
             
-            # Пробрасываем исключение дальше
+            # Re-raise exception
             raise
     return wrapper

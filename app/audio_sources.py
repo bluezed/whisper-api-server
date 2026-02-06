@@ -1,6 +1,6 @@
 """
-Модуль audio_sources.py содержит абстрактный класс AudioSource и его конкретные реализации
-для обработки различных источников аудиофайлов (загруженные файлы, URL, base64, локальные файлы).
+Module audio_sources.py contains abstract class AudioSource and its concrete implementations
+for handling various audio file sources (uploaded files, URLs, base64, local files).
 """
 
 import os
@@ -14,46 +14,46 @@ from typing import Dict, Tuple, Optional, BinaryIO
 from .utils import logger
 
 class AudioSource(abc.ABC):
-    """Абстрактный класс для различных источников аудиофайлов.
+    """Abstract class for various audio file sources.
     
-    Определяет интерфейс для различных источников аудио и предоставляет общие
-    методы для работы с аудиофайлами, такие как проверка размера файла.
+    Defines interface for different audio sources and provides common
+    methods for working with audio files, such as checking file size.
     """
     
     def __init__(self, max_file_size_mb: int = 100):
         """
-        Инициализация источника аудио.
+        Initialize audio source.
         
         Args:
-            max_file_size_mb: Максимальный размер файла в МБ.
+            max_file_size_mb: Maximum file size in MB.
         """
         self.max_file_size_mb = max_file_size_mb
         
     @abc.abstractmethod
     def get_audio_file(self) -> Tuple[Optional[BinaryIO], Optional[str], Optional[str]]:
         """
-        Получает аудиофайл из источника.
+        Gets audio file from source.
         
         Returns:
-            Кортеж (файловый объект, имя файла, сообщение об ошибке).
-            В случае ошибки, возвращает (None, None, сообщение об ошибке).
+            Tuple (file object, filename, error message).
+            On error, returns (None, None, error message).
         """
         pass
         
     def check_file_size(self, file: BinaryIO) -> Tuple[bool, Optional[str]]:
         """
-        Проверяет размер файла.
+        Checks file size.
         
         Args:
-            file: Файловый объект для проверки.
+            file: File object to check.
             
         Returns:
-            Кортеж (результат проверки, сообщение об ошибке).
-            Если проверка пройдена, сообщение об ошибке будет None.
+            Tuple (check result, error message).
+            If check passed, error message will be None.
         """
         file.seek(0, os.SEEK_END)
         file_length = file.tell()
-        file.seek(0)  # Сброс указателя файла после проверки размера
+        file.seek(0)  # Reset file pointer after size check
         
         if file_length > self.max_file_size_mb * 1024 * 1024:
             return False, f"File exceeds maximum size of {self.max_file_size_mb}MB"
@@ -62,74 +62,74 @@ class AudioSource(abc.ABC):
 
 
 class FakeFile:
-    """Имитирует файловый объект для унификации обработки из разных источников.
+    """Simulates file object for unifying processing from different sources.
     
-    Позволяет обрабатывать файлы из различных источников (локальный путь, URL, base64)
-    как стандартные файловые объекты Flask, обеспечивая совместимость с существующей 
-    логикой обработки файлов.
+    Allows processing files from various sources (local path, URL, base64)
+    as standard Flask file objects, ensuring compatibility with existing 
+    file processing logic.
     """
     
     def __init__(self, file: BinaryIO, filename: str):
         """
-        Инициализация объекта FakeFile.
+        Initialize FakeFile object.
         
         Args:
-            file: Исходный файловый объект или поток.
-            filename: Имя файла для метаданных.
+            file: Original file object or stream.
+            filename: Filename for metadata.
         """
         self.file = file
         self.filename = filename
 
     def read(self):
-        """Чтение содержимого файла."""
+        """Read file contents."""
         return self.file.read()
 
     def seek(self, offset: int, whence: int = 0):
-        """Перемещение позиции чтения."""
+        """Move read position."""
         self.file.seek(offset, whence)
 
     def tell(self):
-        """Получение текущей позиции чтения."""
+        """Get current read position."""
         return self.file.tell()
 
     def save(self, destination: str):
         """
-        Сохраняет содержимое файла в указанное место назначения.
+        Save file contents to specified destination.
         
         Args:
-            destination: Путь для сохранения файла.
+            destination: Path to save file.
         """
         with open(destination, 'wb') as f:
             content = self.file.read()
             f.write(content)
-            self.file.seek(0)  # Сброс указателя после чтения
+            self.file.seek(0)  # Reset pointer after reading
 
     @property
     def name(self):
-        """Возвращает имя файла."""
+        """Returns filename."""
         return self.filename
 
 
 class UploadedFileSource(AudioSource):
-    """Источник аудио для файлов, загруженных через HTTP-запрос."""
+    """Audio source for files uploaded via HTTP request."""
     
     def __init__(self, request_files, max_file_size_mb: int = 100):
         """
-        Инициализация источника для загруженных файлов.
+        Initialize source for uploaded files.
         
         Args:
-            request_files: Объект request.files из Flask.
-            max_file_size_mb: Максимальный размер файла в МБ.
+            request_files: request.files object from Flask.
+            max_file_size_mb: Maximum file size in MB.
         """
         super().__init__(max_file_size_mb)
         self.request_files = request_files
         
     def get_audio_file(self) -> Tuple[Optional[BinaryIO], Optional[str], Optional[str]]:
         """
-        Получает аудиофайл из загруженных файлов.
+        Gets audio file from uploaded files.
         
         Returns:
-            Кортеж (файловый объект, имя файла, сообщение об ошибке).
+            Tuple (file object, filename, error message).
         """
         if 'file' not in self.request_files:
             return None, None, "No file part"
@@ -139,7 +139,7 @@ class UploadedFileSource(AudioSource):
         if file.filename == '':
             return None, None, "No selected file"
             
-        # Проверка размера файла
+        # Check file size
         is_valid, error_message = self.check_file_size(file)
         if not is_valid:
             return None, None, error_message
@@ -148,15 +148,15 @@ class UploadedFileSource(AudioSource):
 
 
 class URLSource(AudioSource):
-    """Источник аудио для файлов, доступных по URL."""
+    """Audio source for files available via URL."""
     
     def __init__(self, url: str, max_file_size_mb: int = 100):
         """
-        Инициализация источника для файлов по URL.
+        Initialize source for URL files.
         
         Args:
-            url: URL аудиофайла.
-            max_file_size_mb: Максимальный размер файла в МБ.
+            url: URL of audio file.
+            max_file_size_mb: Maximum file size in MB.
         """
         super().__init__(max_file_size_mb)
         self.url = url
@@ -165,22 +165,22 @@ class URLSource(AudioSource):
         
     def get_audio_file(self) -> Tuple[Optional[BinaryIO], Optional[str], Optional[str]]:
         """
-        Получает аудиофайл по URL.
+        Gets audio file from URL.
         
         Returns:
-            Кортеж (файловый объект, имя файла, сообщение об ошибке).
+            Tuple (file object, filename, error message).
         """
         try:
-            # Скачиваем файл по URL
+            # Download file from URL
             response = requests.get(self.url, stream=True)
             response.raise_for_status()
             
-            # Проверка размера файла (если сервер предоставил информацию о размере)
+            # Check file size (if server provided content length)
             content_length = response.headers.get('Content-Length')
             if content_length and int(content_length) > self.max_file_size_mb * 1024 * 1024:
                 return None, None, f"File exceeds maximum size of {self.max_file_size_mb}MB"
                 
-            # Сохраняем файл во временный файл
+            # Save to temporary file
             self.temp_dir = tempfile.mkdtemp()
             self.temp_file_path = os.path.join(self.temp_dir, str(uuid.uuid4()) + ".wav")
             
@@ -188,21 +188,21 @@ class URLSource(AudioSource):
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
                     
-            # Открываем файл для обработки
+            # Open file for processing
             file = open(self.temp_file_path, 'rb')
             
-            # Создаем объект файла, как будто он пришел из request.files
+            # Create file object as if from request.files
             fake_file = FakeFile(file, os.path.basename(self.temp_file_path))
             
             return fake_file, fake_file.filename, None
             
         except Exception as e:
-            logger.error(f"Ошибка при получении файла по URL {self.url}: {e}")
+            logger.error(f"Error retrieving file from URL {self.url}: {e}")
             self.cleanup()
             return None, None, f"Error retrieving file from URL: {str(e)}"
             
     def cleanup(self):
-        """Очищает временные файлы и директории."""
+        """Clean up temporary files and directories."""
         if self.temp_file_path and os.path.exists(self.temp_file_path):
             os.remove(self.temp_file_path)
         if self.temp_dir and os.path.exists(self.temp_dir):
@@ -210,15 +210,15 @@ class URLSource(AudioSource):
 
 
 class Base64Source(AudioSource):
-    """Источник аудио для файлов, закодированных в base64."""
+    """Audio source for files encoded in base64."""
     
     def __init__(self, base64_data: str, max_file_size_mb: int = 100):
         """
-        Инициализация источника для base64 файлов.
+        Initialize source for base64 files.
         
         Args:
-            base64_data: Данные аудиофайла в формате base64.
-            max_file_size_mb: Максимальный размер файла в МБ.
+            base64_data: Audio file data in base64 format.
+            max_file_size_mb: Maximum file size in MB.
         """
         super().__init__(max_file_size_mb)
         self.base64_data = base64_data
@@ -227,41 +227,41 @@ class Base64Source(AudioSource):
         
     def get_audio_file(self) -> Tuple[Optional[BinaryIO], Optional[str], Optional[str]]:
         """
-        Получает аудиофайл из base64 данных.
+        Gets audio file from base64 data.
         
         Returns:
-            Кортеж (файловый объект, имя файла, сообщение об ошибке).
+            Tuple (file object, filename, error message).
         """
         try:
-            # Декодируем base64
+            # Decode base64
             audio_data = base64.b64decode(self.base64_data)
             
-            # Проверка размера файла
+            # Check file size
             if len(audio_data) > self.max_file_size_mb * 1024 * 1024:
                 return None, None, f"File exceeds maximum size of {self.max_file_size_mb}MB"
                 
-            # Сохраняем файл во временный файл
+            # Save to temporary file
             self.temp_dir = tempfile.mkdtemp()
             self.temp_file_path = os.path.join(self.temp_dir, str(uuid.uuid4()) + ".wav")
             
             with open(self.temp_file_path, 'wb') as f:
                 f.write(audio_data)
                 
-            # Открываем файл для обработки
+            # Open file for processing
             file = open(self.temp_file_path, 'rb')
             
-            # Создаем объект файла, как будто он пришел из request.files
+            # Create file object as if from request.files
             fake_file = FakeFile(file, os.path.basename(self.temp_file_path))
             
             return fake_file, fake_file.filename, None
             
         except Exception as e:
-            logger.error(f"Ошибка при декодировании base64 данных: {e}")
+            logger.error(f"Error decoding base64 data: {e}")
             self.cleanup()
             return None, None, f"Error decoding base64 data: {str(e)}"
             
     def cleanup(self):
-        """Очищает временные файлы и директории."""
+        """Clean up temporary files and directories."""
         if self.temp_file_path and os.path.exists(self.temp_file_path):
             os.remove(self.temp_file_path)
         if self.temp_dir and os.path.exists(self.temp_dir):
@@ -269,43 +269,43 @@ class Base64Source(AudioSource):
 
 
 class LocalFileSource(AudioSource):
-    """Источник аудио для локальных файлов на сервере."""
+    """Audio source for local files on server."""
     
     def __init__(self, file_path: str, max_file_size_mb: int = 100):
         """
-        Инициализация источника для локальных файлов.
+        Initialize source for local files.
         
         Args:
-            file_path: Путь к локальному файлу.
-            max_file_size_mb: Максимальный размер файла в МБ.
+            file_path: Path to local file.
+            max_file_size_mb: Maximum file size in MB.
         """
         super().__init__(max_file_size_mb)
         self.file_path = file_path
         
     def get_audio_file(self) -> Tuple[Optional[BinaryIO], Optional[str], Optional[str]]:
         """
-        Получает локальный аудиофайл.
+        Gets local audio file.
         
         Returns:
-            Кортеж (файловый объект, имя файла, сообщение об ошибке).
+            Tuple (file object, filename, error message).
         """
         if not os.path.exists(self.file_path):
             return None, None, f"File not found: {self.file_path}"
             
         try:
-            # Проверка размера файла
+            # Check file size
             file_size = os.path.getsize(self.file_path)
             if file_size > self.max_file_size_mb * 1024 * 1024:
                 return None, None, f"File exceeds maximum size of {self.max_file_size_mb}MB"
                 
-            # Открываем файл для обработки
+            # Open file for processing
             file = open(self.file_path, 'rb')
             
-            # Создаем объект файла, как будто он пришел из request.files
+            # Create file object as if from request.files
             fake_file = FakeFile(file, os.path.basename(self.file_path))
             
             return fake_file, fake_file.filename, None
             
         except Exception as e:
-            logger.error(f"Ошибка при открытии локального файла {self.file_path}: {e}")
+            logger.error(f"Error opening local file {self.file_path}: {e}")
             return None, None, f"Error opening local file: {str(e)}"
