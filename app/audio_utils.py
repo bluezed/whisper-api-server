@@ -18,7 +18,7 @@ class AudioUtils:
     @staticmethod
     def load_audio(file_path: str, sr: int = 16000) -> Tuple[np.ndarray, int]:
         """
-        Загрузка аудиофайла с использованием встроенной библиотеки wave.
+        Loading audio file using встроенной библиотеки wave.
 
         Args:
             file_path: Путь к аудиофайлу.
@@ -37,7 +37,7 @@ class AudioUtils:
                 if wav_file.getnchannels() != 1:
                     logger.warning(f"Файл {file_path} не моно-аудио, конвертируем в моно")
                 
-                # Читаем аудиоданные
+                # Чиieм аудиоданные
                 frames = wav_file.readframes(-1)
                 # Конвертируем 16-битные целые числа в float32 в диапазоне [-1.0, 1.0]
                 # 32768.0 - это 2^15, максимальное значение для 16-битного знакового целого

@@ -39,9 +39,9 @@ def log_invalid_file_request(func):
                 if data and 'file' in data:
                     filename = data.get('filename', 'base64_data')
             
-            # Логирование обращения к API с невалидным файлом
-            logger.warning(f"Обращение к эндпоинту {method} {endpoint} с невалидным файлом '{filename}' "
-                          f"от клиента {client_ip}. Ошибка: {str(e)}")
+            # Логирование обращения к API with invalid file
+            logger.warning(f"Endpoint accessed {method} {endpoint} with invalid file '{filename}' "
+                          f"from client {client_ip}. Ошибка: {str(e)}")
             
             # Пробрасываем исключение дальше
             raise

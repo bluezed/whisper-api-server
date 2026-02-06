@@ -1,62 +1,62 @@
 #!/bin/bash
 
-# Имя окружения conda
+# Conda environment name
 CONDA_ENV_NAME="whisper-api"
 
-# Флаг обновления (по умолчанию false)
+# Update flag (default false)
 UPDATE_ENV=false
 
-# Проверка наличия аргумента --update
+# Check for --update argument
 if [[ "$1" == "--update" ]]; then
     UPDATE_ENV=true
 fi
 
-# Проверка наличия conda
+# Check for conda
 if ! command -v conda &> /dev/null; then
-    echo "Conda не установлен. Пожалуйста, установите conda и попробуйте снова."
+    echo "Conda not installed. Please install conda and try again."
     exit 1
 fi
 
-# Флаг, указывающий, было ли создано новое окружение
+# Flag indicating if a new environment was created
 NEW_ENV_CREATED=false
 
-# Создание окружения conda, если оно не существует
+# Create conda environment if it doesn't exist
 if ! conda env list | grep -q "$CONDA_ENV_NAME"; then
-    echo "Создание окружения conda: $CONDA_ENV_NAME"
+    echo "Creating conda environment: $CONDA_ENV_NAME"
     conda create -n "$CONDA_ENV_NAME" python=3.12 -y
     NEW_ENV_CREATED=true
 else
-    echo "Окружение conda '$CONDA_ENV_NAME' уже существует."
+    echo "Conda environment '$CONDA_ENV_NAME' already exists."
 fi
 
-# Получение пути к conda
+# Get conda path
 CONDA_PATH=$(which conda)
 
-# Проверка, что путь к conda найден
+# Check that conda path was found
 if [ -z "$CONDA_PATH" ]; then
-    echo "Не удалось найти путь к conda. Убедитесь, что conda установлен и добавлен в PATH."
+    echo "Failed to find conda path. Make sure conda is installed and added to PATH."
     exit 1
 fi
 
-# Активация окружения conda
-echo "Активация окружения conda: $CONDA_ENV_NAME"
+# Activate conda environment
+echo "Activating conda environment: $CONDA_ENV_NAME"
 source $(dirname "$CONDA_PATH")/../etc/profile.d/conda.sh
 conda activate "$CONDA_ENV_NAME"
 
-# Установка зависимостей при первом создании окружения или при флаге --update
+# Install dependencies on first creation or with --update flag
 if [[ "$NEW_ENV_CREATED" == true || "$UPDATE_ENV" == true ]]; then
-    # Установка зависимостей из requirements.txt
+    # Install dependencies from requirements.txt
     if [ -f "requirements.txt" ]; then
-        echo "Установка зависимостей из requirements.txt"
+        echo "Installing dependencies from requirements.txt"
         pip install --no-cache-dir -r requirements.txt
     else
-        echo "Файл requirements.txt не найден. Убедитесь, что он находится в той же директории, что и скрипт."
+        echo "requirements.txt not found. Make sure it's in the same directory as this script."
         exit 1
     fi
 fi
 
-# Запуск сервера
-echo "Запуск сервера..."
+# Start server
+echo "Starting server..."
 python server.py --config config.json
 
-echo "Сервер остановлен."
+echo "Server stopped."

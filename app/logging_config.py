@@ -23,7 +23,7 @@ def setup_logging(log_level=logging.INFO, log_file=None):
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
     
-    # Создаем улучшенный форматтер с поддержкой дополнительных полей
+    # Создаем улучшенный формаieр с поддержкой дополнительных полей
     class CustomFormatter(logging.Formatter):
         def format(self, record):
             # Добавляем поле type если оно отсутствует

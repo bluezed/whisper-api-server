@@ -1,6 +1,6 @@
 """
 Модуль transcriber_service.py содержит класс TranscriptionService,
-который отвечает за обработку и транскрибацию аудиофайлов.
+который оieчает за обработку и транскрибацию аудиофайлов.
 """
 
 import os
@@ -55,7 +55,7 @@ class TranscriptionService:
             file_validator: Валидатор файлов.
 
         Returns:
-            Кортеж (JSON-ответ, HTTP-код).
+            Кортеж (JSON-оieт, HTTP-код).
         """
         # Получаем файл из источника
         file, filename, error = source.get_audio_file()
@@ -75,7 +75,7 @@ class TranscriptionService:
                 file_validator.validate_file(file, filename)
             except ValidationError as e:
                 # Логирование ошибки валидации
-                logger.warning(f"Ошибка валидации файла '{filename}': {str(e)}")
+                logger.warning(f"File validation error '{filename}': {str(e)}")
                 return {"error": str(e)}, 400
 
         # Извлекаем параметры из запроса, если они есть
@@ -116,7 +116,7 @@ class TranscriptionService:
                 result = self.transcriber.process_file(temp_file_path)
                 processing_time = time.time() - start_time
 
-                # Формируем ответ в зависимости от return_timestamps
+                # Формируем оieт в зависимости от return_timestamps
                 if return_timestamps:
                     response = {
                         "segments": result.get("segments", []),

@@ -65,7 +65,7 @@ class FileValidator:
             return True
         except ValidationError as e:
             # Логирование общей ошибки валидации
-            logger.warning(f"Ошибка валидации файла '{filename}': {str(e)}")
+            logger.warning(f"File validation error '{filename}': {str(e)}")
             raise
     
     def _validate_file_size(self, file: BinaryIO) -> None:

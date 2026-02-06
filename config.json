@@ -1,7 +1,7 @@
 {
     "service_port": 5042,
-    "model_path": "/home/text-generation/models/whisper/podlodka-turbo",
-    "language": "ru",
+    "model_path": "/home/tgepp/whisper-models/whisper-base",
+    "language": "en",
     "enable_history": true,
     "chunk_length_s": 28,
     "batch_size": 6,

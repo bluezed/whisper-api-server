@@ -30,7 +30,7 @@ class WhisperTranscriber:
     
     Attributes:
         config (Dict): Словарь с параметрами конфигурации.
-        model_path (str): Путь к модели Whisper.
+        model_path (str): Model path Whisper.
         language (str): Язык распознавания.
         chunk_length_s (int): Длина аудиочанка в секундах.
         batch_size (int): Размер пакета для обработки.
@@ -39,8 +39,8 @@ class WhisperTranscriber:
         temperature (float): Параметр температуры для генерации.
         torch_dtype (torch.dtype): Оптимальный тип данных для тензоров.
         audio_processor (AudioProcessor): Объект для обработки аудио.
-        device (torch.device): Устройство для вычислений.
-        model (WhisperForConditionalGeneration): Загруженная модель Whisper.
+        device (torch.device): Device for computations.
+        model (WhisperForConditionalGeneration): Loaded model Whisper.
         processor (WhisperProcessor): Процессор для модели Whisper.
         asr_pipeline (pipeline): Пайплайн для автоматического распознавания речи.
     """
@@ -83,38 +83,38 @@ class WhisperTranscriber:
         if torch.cuda.is_available():
             # Проверяем, доступна ли GPU с индексом 1
             if torch.cuda.device_count() > 1:
-                logger.info("Используется CUDA GPU с индексом 1 для вычислений")
+                logger.info("Using CUDA GPU index 1 for computations")
                 return torch.device("cuda:1")
             else:
-                logger.info("Доступна только одна CUDA GPU, используется GPU с индексом 0")
+                logger.info("Only one CUDA GPU available, using GPU index 0")
                 return torch.device("cuda:0")
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            logger.info("Используется MPS (Apple Silicon) для вычислений")
-            # Обходное решение для MPS
+            logger.info("Using MPS (Apple Silicon) for computations")
+            # MPS workaround
             setattr(torch.distributed, "is_initialized", lambda: False)
             return torch.device("mps")
         else:
-            logger.info("Используется CPU для вычислений")
+            logger.info("Using CPU for computations")
             return torch.device("cpu")
 
     def _load_model(self) -> None:
         """
-        Загрузка модели и процессора.
+        Loading model and processor.
         
         Raises:
-            Exception: Если не удалось загрузить модель.
+            Exception: If model failed to load.
         """
-        logger.info(f"Загрузка модели из {self.model_path}")
+        logger.info(f"Loading model from {self.model_path}")
 
         use_flash_attn = False
         if self.device.type == "cuda":
-            # Проверка GPU на поддержку Flash Attention (требует архитектуру Ampere или новее, т.е >= 8)
+            # Checking GPU for Flash Attention support (requires Ampere architecture or newer, ie >= 8)
             capability = torch.cuda.get_device_capability(self.device.index)
             if capability[0] >= 8:
                 use_flash_attn = True
-                logger.info(f"GPU {self.device} поддерживает Flash Attention 2 (compute capability: {capability[0]}.{capability[1]})")
+                logger.info(f"GPU {self.device} supports Flash Attention 2 (compute capability: {capability[0]}.{capability[1]})")
             else:
-                logger.info(f"GPU {self.device} не поддерживает Flash Attention 2 (compute capability: {capability[0]}.{capability[1]}), делаем fall-back")
+                logger.info(f"GPU {self.device} does not support Flash Attention 2 (compute capability: {capability[0]}.{capability[1]}), falling back")
         try:
             if use_flash_attn:
                 self.model = WhisperForConditionalGeneration.from_pretrained(
@@ -155,9 +155,9 @@ class WhisperTranscriber:
             device=self.device,
         )
 
-        logger.info("Модель успешно загружена и готова к использованию")
+        logger.info("Model loaded successfully and ready for use")
 
-    # Метод _load_audio удален, так как его функциональность перенесена в AudioUtils
+    # Method _load_audio removed, functionality moved to AudioUtils
 
     def transcribe(self, audio_path: str) -> Union[str, Dict]:
         """
@@ -171,10 +171,10 @@ class WhisperTranscriber:
             - Если return_timestamps=False: строка с распознанным текстом
             - Если return_timestamps=True: словарь с ключами "segments" (список словарей с ключами start_time_ms, end_time_ms, text) и "text" (полный текст)
         """
-        logger.info(f"Начало транскрибации файла: {audio_path}")
+        logger.info(f"Starting transcription of file: {audio_path}")
         
         try:
-            # Загрузка аудио в формате numpy array
+            # Loading audio as numpy array
             audio_array, sampling_rate = AudioUtils.load_audio(audio_path, sr=16000)
             
             # Транскрибация с корректным форматом данных
@@ -234,7 +234,7 @@ class WhisperTranscriber:
             }
             
         except Exception as e:
-            logger.error(f"Ошибка в процессе транскрибации аудиофайла '{audio_path}': {str(e)}")
+            logger.error(f"Error during audio transcription '{audio_path}': {str(e)}")
             logger.error(f"Тип исключения: {type(e).__name__}")
             logger.error(f"Traceback: {traceback.format_exc()}")
             raise
@@ -270,7 +270,7 @@ class WhisperTranscriber:
             
         except Exception as e:
             elapsed_time = time.time() - start_time
-            logger.error(f"Ошибка при обработке файла '{input_path}' через {elapsed_time:.2f} секунд: {str(e)}")
+            logger.error(f"Error processing file '{input_path}' in {str(e)}")
             logger.error(f"Тип исключения: {type(e).__name__}")
             logger.error(f"Traceback: {traceback.format_exc()}")
             raise

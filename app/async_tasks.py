@@ -25,7 +25,7 @@ class AsyncTaskManager:
     
     def run_task(self, func: Callable, *args, **kwargs) -> str:
         """
-        Запуск задачи в отдельном потоке.
+        Запуск задачи в оieльном потоке.
         
         Args:
             func: Функция для выполнения.
@@ -77,7 +77,7 @@ class AsyncTaskManager:
             self.tasks[task_id]["result"] = result
             self.tasks[task_id]["completed_at"] = time.time()
             
-            logger.info(f"Задача {task_id} завершена успешно")
+            logger.info(f"Task {task_id} completed successfully")
         except Exception as e:
             # Обработка ошибки
             self.tasks[task_id]["status"] = "failed"

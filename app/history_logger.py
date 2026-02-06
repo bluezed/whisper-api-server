@@ -81,5 +81,5 @@ class HistoryLogger:
             return history_path
             
         except Exception as e:
-            logger.error(f"Ошибка при сохранении истории транскрибации: {e}")
+            logger.error(f"Error saving transcription history: {e}")
             return None

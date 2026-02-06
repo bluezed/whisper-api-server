@@ -6,120 +6,120 @@ from flask import Flask
 from flask_cors import CORS
 import waitress
 
-# Импорт классов и функций из других модулей
+# Import classes and functions from other modules
 from .transcriber import WhisperTranscriber
 from .routes import Routes
 from .validators import FileValidator
 from .file_manager import temp_file_manager
 from .logging_config import setup_logging
-from .request_logger import RequestLogger  # Новый импорт
+from .request_logger import RequestLogger  # New import
 
 
 class WhisperServiceAPI:
     """
-    Класс для API сервиса распознавания речи.
+    Class for speech recognition API service.
     
     Attributes:
-        config (Dict): Словарь с параметрами конфигурации.
-        port (int): Порт для сервиса.
-        transcriber (WhisperTranscriber): Экземпляр транскрайбера.
-        app (Flask): Flask-приложение.
-        file_validator (FileValidator): Валидатор файлов.
+        config (Dict): Dictionary with configuration parameters.
+        port (int): Port for service.
+        transcriber (WhisperTranscriber): Transcriber instance.
+        app (Flask): Flask application.
+        file_validator (FileValidator): File validator.
     """
 
     def __init__(self, config_path: str):
         """
-        Инициализация API сервиса.
+        Initialize API service.
 
         Args:
-            config_path: Путь к конфигурационному файлу.
+            config_path: Path to configuration file.
         """
-        # Загрузка конфигурации
+        # Loading configuration
         self.config = self._load_config(config_path)
 
-        # Настройка логирования
+        # Configure logging
         log_level = getattr(logging, self.config.get("log_level", "INFO").upper())
         log_file = self.config.get("log_file", "logs/whisper_api.log")
         setup_logging(log_level=log_level, log_file=log_file)
         
-        # Получаем логгер
+        # Get logger
         self.logger = logging.getLogger('app')
-        self.logger.info("Инициализация API сервиса")
+        self.logger.info("Initializing API service")
 
-        # Порт для сервиса
+        # Port for service
         self.port = self.config["service_port"]
 
-        # Создание экземпляра транскрайбера
+        # Create transcriber instance
         self.transcriber = WhisperTranscriber(self.config)
         
-        # Создание валидатора файлов
+        # Create file validator
         self.file_validator = FileValidator(self.config)
 
-        # Определение пути к директории static
+        # Determine static folder path
         current_dir = os.path.dirname(os.path.abspath(__file__))
         static_folder_path = os.path.join(current_dir, 'static')
         
-        # Создание Flask-приложения с явным указанием пути к static
+        # Create Flask application with explicit static path
         self.app = Flask("whisper-service", static_folder=static_folder_path)
 
-        # Настройка CORS с явным разрешением всех методов, заголовков и источников
+        # Configure CORS with explicit permission for all methods, headers, and origins
         CORS(self.app)
 
-        # Инициализация логирования запросов
+        # Initialize request logging
         request_logging_config = self.config.get("request_logging", {})
         RequestLogger(self.app, request_logging_config)
-        self.logger.info("Логирование запросов активировано")
+        self.logger.info("Request logging activated")
 
-        # Регистрация маршрутов
+        # Register routes
         Routes(self.app, self.transcriber, self.config, self.file_validator)
 
-        self.logger.info(f"API сервис инициализирован, порт: {self.port}")
-        self.logger.info(f"Статические файлы будут обслуживаться из: {static_folder_path}")
+        self.logger.info(f"API service initialized, port: {self.port}")
+        self.logger.info(f"Static files will be served from: {static_folder_path}")
     
     def _load_config(self, config_path: str) -> Dict:
         """
-        Загрузка конфигурации из JSON-файла.
+        Loading configuration from JSON file.
 
         Args:
-            config_path: Путь к файлу конфигурации.
+            config_path: Path to configuration file.
 
         Returns:
-            Словарь с параметрами конфигурации.
+            Dictionary with configuration parameters.
 
         Raises:
-            FileNotFoundError: Если файл конфигурации не найден.
-            json.JSONDecodeError: Если файл конфигурации содержит некорректный JSON.
+            FileNotFoundError: If configuration file not found.
+            json.JSONDecodeError: If configuration file contains invalid JSON.
         """
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
             return config
         except FileNotFoundError as e:
-            self.logger.error(f"Файл конфигурации не найден: {e}")
+            self.logger.error(f"Configuration file not found: {e}")
             raise
         except json.JSONDecodeError as e:
-            self.logger.error(f"Ошибка при загрузке конфигурации: {e}")
+            self.logger.error(f"Error loading configuration: {e}")
             raise
 
     def run(self) -> None:
         """
-        Запуск сервиса.
+        Start service.
         """
-        self.logger.info(f"Запуск сервиса на порту {self.port}")
+        self.logger.info(f"Starting service on port {self.port}")
         
-        # Использовать waitress для production-ready сервера
+        # Use waitress for production-ready server
         waitress.serve(
             self.app, 
             host='0.0.0.0', 
             port=self.port, 
-            # Увеличиваем время, которое сервер будет ждать ответа от приложения,
-            # прежде чем разорвать соединение из-за отсутствия сетевой активности.
-            channel_timeout=600  # 10 минут
+            # Increase the time the server will wait for a response from the application
+            # before terminating the connection due to lack of network activity.
+            channel_timeout=600  # 10 minutes
         )
     
     def cleanup(self) -> None:
         """
-        Очистка ресурсов перед завершением работы.
+        Cleanup resources before shutdown.
         """
-        self.logger.info("Очистка ресурсов перед завершением работы")
+        self.logger.info("Cleaning up resources before shutdown")
         temp_file_manager.cleanup_all()

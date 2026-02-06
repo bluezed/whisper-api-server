@@ -3,16 +3,16 @@ from app import WhisperServiceAPI
 
 def main():
     """
-    Локальный, OpenAI совместимый API сервис распознавания речи с использованием модели Whisper.
+    Local, OpenAI-compatible speech recognition API service using Whisper model.
     """
 
-    # Парсинг аргументов командной строки
-    parser = argparse.ArgumentParser(description="Сервис распознавания речи с использованием модели Whisper")
-    parser.add_argument("--config", help="Путь к файлу конфигурации", default="config.json")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Speech recognition service using Whisper model")
+    parser.add_argument("--config", help="Path to configuration file", default="config.json")
     
     args = parser.parse_args()
     
-    # Запуск сервиса
+    # Start service
     service = WhisperServiceAPI(args.config)
     service.run()
 

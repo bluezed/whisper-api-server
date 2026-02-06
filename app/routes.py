@@ -90,8 +90,8 @@ class Routes:
             except ValidationError as e:
                 # Логирование обращения к API с невалидным путем к файлу
                 client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
-                logger.warning(f"Обращение к эндпоинту /local/transcriptions с невалидным путем к файлу '{file_path}' "
-                              f"от клиента {client_ip}. Ошибка: {str(e)}")
+                logger.warning(f"Endpoint accessed /local/transcriptions с невалидным путем к файлу '{file_path}' "
+                              f"from client {client_ip}. Ошибка: {str(e)}")
                 return jsonify({"error": str(e)}), 400
             
             source = LocalFileSource(validated_path, self.config.get("file_validation", {}).get("max_file_size_mb", 100))

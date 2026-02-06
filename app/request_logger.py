@@ -1,5 +1,5 @@
 """
-Модуль request_logger.py содержит middleware для логирования входящих запросов и ответов.
+Модуль request_logger.py содержит middleware для логирования входящих запросов и оieтов.
 """
 
 import time
@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 
 class RequestLogger:
     """
-    Middleware для логирования входящих запросов и ответов.
+    Middleware для логирования входящих запросов и оieтов.
     """
     
     def __init__(self, app=None, config: Optional[Dict] = None):
@@ -70,7 +70,7 @@ class RequestLogger:
             )
     
     def _after_request(self, response):
-        """Логирование ответа."""
+        """Логирование оieта."""
         if not self._should_log_request():
             return response
         
@@ -157,7 +157,7 @@ class RequestLogger:
         )
     
     def _log_debug_response(self, response, processing_time: float):
-        """Логирование полных данных ответа в отладочном режиме."""
+        """Логирование полных данных оieта в отладочном режиме."""
         response_info = {
             "status_code": response.status_code,
             "headers": dict(response.headers),
@@ -210,7 +210,7 @@ class RequestLogger:
         return message.strip()
     
     def _format_response_message(self, response, processing_time: float) -> str:
-        """Форматирование сообщения с деталями ответа."""
+        """Форматирование сообщения с деталями оieта."""
         status_code = response.status_code
         content_length = response.content_length or 0
         processing_time_rounded = round(processing_time, 3)

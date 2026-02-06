@@ -48,7 +48,7 @@ class AudioProcessor:
             Путь к сконвертированному WAV-файлу.
             
         Raises:
-            subprocess.CalledProcessError: Если произошла ошибка при конвертации.
+            subprocess.CalledProcessError: If an error occurred при конвертации.
         """
         audio_rate = self.config["audio_rate"]
 
@@ -85,7 +85,7 @@ class AudioProcessor:
             logger.info(f"Файл конвертирован в WAV: {output_path}")
             return output_path
         except subprocess.CalledProcessError as e:
-            logger.error(f"Ошибка при конвертации в WAV: {e.stderr.decode()}")
+            logger.error(f"Error converting to WAV: {e.stderr.decode()}")
             raise
     
     def normalize_audio(self, input_path: str) -> str:
@@ -99,7 +99,7 @@ class AudioProcessor:
             Путь к нормализованному WAV-файлу.
             
         Raises:
-            subprocess.CalledProcessError: Если произошла ошибка при нормализации.
+            subprocess.CalledProcessError: If an error occurred при нормализации.
         """
         # Создаем временный файл для нормализованного аудио
         output_path, _ = temp_file_manager.create_temp_file("_normalized.wav")
@@ -120,7 +120,7 @@ class AudioProcessor:
             logger.info(f"Аудио нормализовано: {output_path}")
             return output_path
         except subprocess.CalledProcessError as e:
-            logger.error(f"Ошибка при нормализации аудио: {e.stderr.decode()}")
+            logger.error(f"Error normalizing audio: {e.stderr.decode()}")
             raise
     
     def speed_up_audio(self, input_path: str) -> str:
@@ -134,11 +134,11 @@ class AudioProcessor:
             Путь к ускоренному WAV-файлу.
             
         Raises:
-            subprocess.CalledProcessError: Если произошла ошибка при ускорении.
+            subprocess.CalledProcessError: If an error occurred при ускорении.
         """
-        # Если ускорение не требуется (коэффициент = 1.0), возвращаем исходный файл
+        # Если ускорение не ieбуется (коэффициент = 1.0), возвращаем исходный файл
         if float(self.audio_speed_factor) == 1.0:
-            logger.info(f"Ускорение не требуется (коэффициент = {self.audio_speed_factor})")
+            logger.info(f"Ускорение не ieбуется (коэффициент = {self.audio_speed_factor})")
             return input_path
         
         # Создаем временный файл для ускоренного аудио
@@ -161,7 +161,7 @@ class AudioProcessor:
             logger.info(f"Аудио ускорено: {output_path}")
             return output_path
         except subprocess.CalledProcessError as e:
-            logger.error(f"Ошибка при ускорении аудио: {e.stderr.decode()}")
+            logger.error(f"Error speeding up audio: {e.stderr.decode()}")
             raise
     
     def add_silence(self, input_path: str) -> str:
@@ -175,7 +175,7 @@ class AudioProcessor:
             Путь к аудиофайлу с добавленной тишиной.
             
         Raises:
-            subprocess.CalledProcessError: Если произошла ошибка при добавлении тишины.
+            subprocess.CalledProcessError: If an error occurred при добавлении тишины.
         """
         # Создаем временный файл
         output_path, _ = temp_file_manager.create_temp_file("_silence.wav")
@@ -195,7 +195,7 @@ class AudioProcessor:
             logger.info(f"Тишина добавлена: {output_path}")
             return output_path
         except subprocess.CalledProcessError as e:
-            logger.error(f"Ошибка при добавлении тишины: {e.stderr.decode()}")
+            logger.error(f"Error adding silence: {e.stderr.decode()}")
             raise
     
     def process_audio(self, input_path: str) -> Tuple[str, list]:
@@ -209,7 +209,7 @@ class AudioProcessor:
             Кортеж: (путь к обработанному файлу, список временных файлов для удаления)
             
         Raises:
-            Exception: Если произошла ошибка при обработке аудио.
+            Exception: If an error occurred при обрабоie аудио.
         """
         temp_files = []
         
@@ -235,6 +235,6 @@ class AudioProcessor:
             return silence_path, temp_files
         
         except Exception as e:
-            logger.error(f"Ошибка при обработке аудио {input_path}: {e}")
+            logger.error(f"Error processing audio {input_path}: {e}")
             temp_file_manager.cleanup_temp_files(temp_files)
             raise
